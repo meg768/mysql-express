@@ -14,11 +14,11 @@ class Server {
 
 		args.usage('Usage: $0 [options]');
 		args.option('listener', { alias: 'l', default: process.env.MYSQSL_EXPRESS_LISTENER, describe: 'Listen to port' });
-		args.option('database', { alias: 'd', default: process.env.MYSQL_DATABASE, describe: 'MySQL database' });
-		args.option('port', { alias: 'p', default: process.env.MYSQL_PORT, describe: 'MySQL port' });
-		args.option('user', { alias: 'u', default: process.env.MYSQL_USER, describe: 'MySQL user' });
-		args.option('host', { alias: 'h', default: process.env.MYSQL_HOST, describe: 'MySQL host' });
-		args.option('password', { alias: 'w', default: process.env.MYSQL_PASSWORD, describe: 'MySQL password' });
+		args.option('database', { alias: 'd', default: process.env.MYSQSL_EXPRESS_DATABASE, describe: 'MySQL database' });
+		args.option('port', { alias: 'p', default: process.env.MYSQSL_EXPRESS_PORT, describe: 'MySQL port' });
+		args.option('user', { alias: 'u', default: process.env.MYSQSL_EXPRESS_USER, describe: 'MySQL user' });
+		args.option('host', { alias: 'h', default: process.env.MYSQSL_EXPRESS_HOST, describe: 'MySQL host' });
+		args.option('password', { alias: 'w', default: process.env.MYSQSL_EXPRESS_PASSWORD, describe: 'MySQL password' });
 
 		args.help();
 		args.wrap(null);
