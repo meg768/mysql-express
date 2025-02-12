@@ -56,11 +56,11 @@ class Server {
 		app.get('/query', async (request, response) => {
 			let { database, ...options } = Object.assign({}, request.body, request.query);
 			let connection = undefined;
+			let result = undefined;
 
 			try {
 				connection = await this.getConnection(database);
-
-				let result = await this.query(connection, options);
+				result = await this.query(connection, options);
 
 				response.status(200).json(result);
 			} catch (error) {
@@ -73,11 +73,11 @@ class Server {
 		app.post('/upsert', async (request, response) => {
 			let { database, table, row, rows } = Object.assign({}, request.body, request.query);
 			let connection = undefined;
+			let result = undefined;
 
 			try {
 				connection = await this.getConnection(database);
-
-				let result = await this.upsert(connection, table, row || rows);
+				result = await this.upsert(connection, table, row || rows);
 
 				response.status(200).json(result);
 			} catch (error) {
