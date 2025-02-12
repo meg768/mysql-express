@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 let MySQL = require('mysql');
-var isString = require('yow/isString');
+let isString = require('yow/isString');
+let isArray = require('yow/isArray');
 
 require('dotenv').config();
 
@@ -29,6 +30,14 @@ class Server {
 		this.argv = args.argv;
 	}
 
+	log() {
+		console.log.apply(this, arguments);
+	}
+
+	debug() {
+		console.log.apply(this, arguments);
+	}
+
 	listen() {
 		const express = require('express');
 		const bodyParser = require('body-parser');
@@ -49,6 +58,7 @@ class Server {
 				let connection = await this.getConnection();
 				let options = Object.assign({}, request.body, request.query);
 				let result = await this.query(connection, options);
+				connection.release();
 				response.status(200).json(result);
 			} catch (error) {
 				response.status(404).json(error);
@@ -56,26 +66,32 @@ class Server {
 		});
 
 		app.post('/upsert', async (request, response) => {
+			let connection = undefined;
+
 			try {
-				let connection = await this.getConnection();
+				connection = await this.getConnection();
+
 				let params = Object.assign({}, request.body, request.query);
-				let { table, row } = params;
-				let result = await this.upsert(connection, table, row);
+				let { table, row, rows } = params;
+				let result = await this.upsert(connection, table, row || rows);
+
 				response.status(200).json(result);
 			} catch (error) {
 				response.status(404).json(error);
+			} finally {
+				this.releaseConnection(connection);
 			}
 		});
 
 		app.listen(this.argv.listener);
 	}
 
-	upsert(connection, table, row) {
-		let values = [];
-		let columns = [];
-
+	async upsert(connection, table, rows) {
 		let getSQL = (row) => {
+			let values = [];
+			let columns = [];
 			let sql = '';
+
 			Object.keys(row).forEach(function (column) {
 				columns.push(column);
 				values.push(row[column]);
@@ -90,19 +106,46 @@ class Server {
 				})
 				.join(',');
 
-
-            return sql;
+			return sql;
 		};
 
-		return this.query(connection, getSQL(row));
+		if (!isArray(rows)) {
+			rows = [rows];
+		}
+
+		let multipleStatements = rows.length > 1;
+		let statements = [];
+
+		for (let row of rows) {
+			statements.push(getSQL(row));
+		}
+
+		// Start transaction if more than one row
+		if (multipleStatements) {
+			statements.unshift('START TRANSACTION');
+			statements.push('COMMIT');
+		}
+
+		let sql = statements.join(';\n');
+
+		try {
+			return await this.query(connection, sql);
+		} catch (error) {
+			if (multipleStatements) {
+				await this.query(connection, 'ROLLBACK');
+			}
+			throw error;
+		}
 	}
 
-	query(connection, options) {
-		return new Promise((resolve, reject) => {
+	async query(connection, options) {
+		let promise = new Promise((resolve, reject) => {
 			try {
 				if (isString(options)) {
 					options = { sql: options };
 				}
+
+				this.debug(options.sql);
 
 				connection.query(options, function (error, results) {
 					if (error) {
@@ -113,6 +156,8 @@ class Server {
 				reject(error);
 			}
 		});
+
+		return await promise;
 	}
 
 	connect() {
@@ -133,9 +178,17 @@ class Server {
 		return new Promise((resolve, reject) => {
 			this.pool.getConnection((error, connection) => {
 				if (error) reject(error);
-				else resolve(connection);
+				else {
+					resolve(connection);
+				}
 			});
 		});
+	}
+
+	releaseConnection(connection) {
+		if (connection) {
+			connection.release();
+		}
 	}
 
 	async run() {
