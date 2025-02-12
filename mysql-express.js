@@ -59,7 +59,7 @@ class Server {
 			try {
 				let connection = await this.getConnection();
 				let params = Object.assign({}, request.body, request.query);
-                let {table, row}  = params;
+				let { table, row } = params;
 				let result = await this.upsert(connection, table, row);
 				response.status(200).json(result);
 			} catch (error) {
@@ -67,30 +67,34 @@ class Server {
 			}
 		});
 
-        app.listen(this.argv.listener);
+		app.listen(this.argv.listener);
 	}
 
 	upsert(connection, table, row) {
 		let values = [];
 		let columns = [];
 
-		Object.keys(row).forEach(function (column) {
-			columns.push(column);
-			values.push(row[column]);
-		});
+		let getSQL = (row) => {
+			let sql = '';
+			Object.keys(row).forEach(function (column) {
+				columns.push(column);
+				values.push(row[column]);
+			});
 
-		let sql = '';
+			sql += MySQL.format('INSERT INTO ?? (??) VALUES (?) ', [table, columns, values]);
+			sql += MySQL.format('ON DUPLICATE KEY UPDATE ');
 
-		sql += MySQL.format('INSERT INTO ?? (??) VALUES (?) ', [table, columns, values]);
-		sql += MySQL.format('ON DUPLICATE KEY UPDATE ');
+			sql += columns
+				.map((column) => {
+					return MySQL.format('?? = VALUES(??)', [column, column]);
+				})
+				.join(',');
 
-		sql += columns
-			.map((column) => {
-				return MySQL.format('?? = VALUES(??)', [column, column]);
-			})
-			.join(',');
 
-		return this.query(connection, sql);
+            return sql;
+		};
+
+		return this.query(connection, getSQL(row));
 	}
 
 	query(connection, options) {
