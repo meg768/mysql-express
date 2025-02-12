@@ -13,7 +13,7 @@ class Server {
 		args.usage('Usage: $0 [options]');
 
 		args.usage('Usage: $0 [options]');
-		args.option('listener', { alias: 'l', default: 3001, describe: 'Listen to port' });
+		args.option('listener', { alias: 'l', default: process.env.MYSQSL_EXPRESS_LISTENER, describe: 'Listen to port' });
 		args.option('database', { alias: 'd', default: process.env.MYSQL_DATABASE, describe: 'MySQL database' });
 		args.option('port', { alias: 'p', default: process.env.MYSQL_PORT, describe: 'MySQL port' });
 		args.option('user', { alias: 'u', default: process.env.MYSQL_USER, describe: 'MySQL user' });
