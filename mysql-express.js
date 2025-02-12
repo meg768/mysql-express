@@ -18,6 +18,7 @@ class Server {
 		args.option('user', { alias: 'u', default: process.env.MYSQSL_EXPRESS_USER, describe: 'MySQL user' });
 		args.option('host', { alias: 'h', default: process.env.MYSQSL_EXPRESS_HOST, describe: 'MySQL host' });
 		args.option('password', { alias: 'w', default: process.env.MYSQSL_EXPRESS_PASSWORD, describe: 'MySQL password' });
+		args.option('token', { alias: 't', default: process.env.MYSQSL_EXPRESS_TOKEN, describe: 'Secret token' });
 
 		args.help();
 		args.wrap(null);
@@ -54,34 +55,43 @@ class Server {
 		});
 
 		app.get('/query', async (request, response) => {
-			let { database, ...options } = Object.assign({}, request.body, request.query);
+			let { token, database, ...options } = Object.assign({}, request.body, request.query);
 			let connection = undefined;
 			let result = undefined;
 
 			try {
+
+				if (token != this.argv.token) {
+					throw new Error('Invalid token');
+				}
+
 				connection = await this.getConnection(database);
 				result = await this.query(connection, options);
 
 				response.status(200).json(result);
 			} catch (error) {
-				response.status(404).json(error);
+				response.status(404).json({error:error.message});
 			} finally {
 				this.releaseConnection(connection);
 			}
 		});
 
 		app.post('/upsert', async (request, response) => {
-			let { database, table, row, rows } = Object.assign({}, request.body, request.query);
+			let { token, database, table, row, rows } = Object.assign({}, request.body, request.query);
 			let connection = undefined;
 			let result = undefined;
 
 			try {
+				if (token != this.argv.token) {
+					throw new Error('Invalid token');
+				}
+
 				connection = await this.getConnection(database);
 				result = await this.upsert(connection, table, row || rows);
 
 				response.status(200).json(result);
 			} catch (error) {
-				response.status(404).json(error);
+				response.status(404).json({ error: error.message });
 			} finally {
 				this.releaseConnection(connection);
 			}
