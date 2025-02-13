@@ -60,7 +60,6 @@ class Server {
 			let result = undefined;
 
 			try {
-
 				if (token != this.argv.token) {
 					throw new Error('Invalid token');
 				}
@@ -70,7 +69,7 @@ class Server {
 
 				response.status(200).json(result);
 			} catch (error) {
-				response.status(404).json({error:error.message});
+				response.status(404).json({ error: error.message });
 			} finally {
 				this.releaseConnection(connection);
 			}
@@ -161,7 +160,7 @@ class Server {
 
 				this.debug(options.sql);
 
-				connection.query(options, function (error, results) {
+				connection.query(options, (error, results) => {
 					if (error) {
 						reject(error);
 					} else resolve(results);
