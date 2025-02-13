@@ -40,6 +40,12 @@ class Server {
 	}
 
 	listen() {
+		let authenticate = (request) => {
+			if (request.headers.authorization != `Basic ${this.argv.token}`) {
+				throw new Error('Authorization failed');
+			}
+		};
+
 		const express = require('express');
 		const bodyParser = require('body-parser');
 		const cors = require('cors');
@@ -55,14 +61,12 @@ class Server {
 		});
 
 		app.get('/query', async (request, response) => {
-			let { token, database, ...options } = Object.assign({}, request.body, request.query);
+			let { database, ...options } = Object.assign({}, request.body, request.query);
 			let connection = undefined;
 			let result = undefined;
 
 			try {
-				if (token != this.argv.token) {
-					throw new Error('Invalid token');
-				}
+				authenticate(request);
 
 				connection = await this.getConnection(database);
 				result = await this.query(connection, options);
@@ -76,14 +80,12 @@ class Server {
 		});
 
 		app.post('/upsert', async (request, response) => {
-			let { token, database, table, row, rows } = Object.assign({}, request.body, request.query);
+			let { database, table, row, rows } = Object.assign({}, request.body, request.query);
 			let connection = undefined;
 			let result = undefined;
 
 			try {
-				if (token != this.argv.token) {
-					throw new Error('Invalid token');
-				}
+				authenticate(request);
 
 				connection = await this.getConnection(database);
 				result = await this.upsert(connection, table, row || rows);
