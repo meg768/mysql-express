@@ -153,16 +153,22 @@ class Server {
 		}
 	}
 
-	async query(connection, options) {
+	async query(connection, params) {
 		let promise = new Promise((resolve, reject) => {
 			try {
-				if (isString(options)) {
-					options = { sql: options };
+				if (isString(params)) {
+					params = { sql: params };
 				}
 
-				this.debug(options.sql);
+				let {format, sql, ...options} = params;
 
-				connection.query(options, (error, results) => {
+				if (format) {
+					sql = MySQL.format(sql, format);
+				}
+
+				this.debug(params.sql);
+
+				connection.query({sql:sql, ...options}, (error, results) => {
 					if (error) {
 						reject(error);
 					} else resolve(results);
