@@ -156,12 +156,11 @@ class Server {
 	async query(connection, params) {
 		let promise = new Promise((resolve, reject) => {
 			try {
-
 				if (isString(params)) {
 					params = { sql: params };
 				}
 
-				let {format, sql, ...options} = params;
+				let { format, sql, ...options } = params;
 
 				if (format) {
 					sql = MySQL.format(sql, format);
